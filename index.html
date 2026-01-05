@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Master Theorem Visualizer</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    :root {
+        --primary: #4361ee;
+        --primary-dark: #3a56d4;
+        --secondary: #7209b7;
+        --success: #4cc9f0;
+        --danger: #f72585;
+        --warning: #f8961e;
+        --light: #f8f9fa;
+        --dark: #212529;
+        --gray: #6c757d;
+        --gray-light: #e9ecef;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --radius: 10px;
+        --transition: all 0.3s ease;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 1200px;
+        background: white;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        animation: fadeIn 0.8s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+        background: linear-gradient(to right, var(--primary), var(--secondary));
+        color: white;
+        padding: 25px 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+        background-size: 20px 20px;
+        animation: float 20s linear infinite;
+    }
+
+    @keyframes float {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .header h1 {
+        font-size: 2.2rem;
+        margin-bottom: 8px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        max-width: 800px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .content {
+        display: flex;
+        flex-wrap: wrap;
+        min-height: 600px;
+    }
+
+    .input-section {
+        flex: 1;
+        min-width: 350px;
+        padding: 30px;
+        background: var(--light);
+        border-right: 1px solid var(--gray-light);
+    }
+
+    .visualization-section {
+        flex: 2;
+        min-width: 400px;
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .input-group {
+        margin-bottom: 25px;
+        animation: slideIn 0.5s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .input-group:nth-child(1) { animation-delay: 0.1s; }
+    .input-group:nth-child(2) { animation-delay: 0.2s; }
+    .input-group:nth-child(3) { animation-delay: 0.3s; }
+    .input-group:nth-child(4) { animation-delay: 0.4s; }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    .input-group label {
+        display: flex;
+        align-items: center;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--dark);
+    }
+
+    .input-group label i {
+        margin-right: 10px;
+        color: var(--primary);
+    }
+
+    .input-wrapper {
+        position: relative;
+    }
+
+    .input-wrapper input {
+        width: 100%;
+        padding: 14px 16px 14px 45px;
+        border: 2px solid var(--gray-light);
+        border-radius: var(--radius);
+        font-size: 1rem;
+        transition: var(--transition);
+        outline: none;
+    }
+
+    .input-wrapper input:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    .input-wrapper i {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray);
+    }
+
+    .button-container {
+        margin-top: 10px;
+    }
+
+    .btn {
+        padding: 16px 30px;
+        background: linear-gradient(to right, var(--primary), var(--primary-dark));
+        color: white;
+        border: none;
+        border-radius: var(--radius);
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        box-shadow: 0 4px 6px rgba(67, 97, 238, 0.3);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 4px 6px rgba(67, 97, 238, 0.3); }
+        50% { box-shadow: 0 4px 12px rgba(67, 97, 238, 0.5); }
+        100% { box-shadow: 0 4px 6px rgba(67, 97, 238, 0.3); }
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(67, 97, 238, 0.4);
+    }
+
+    .btn i {
+        margin-right: 10px;
+        font-size: 1.2rem;
+    }
+
+    .result-box {
+        background: white;
+        border-radius: var(--radius);
+        padding: 25px;
+        margin-top: 25px;
+        box-shadow: var(--shadow);
+        border-left: 5px solid var(--primary);
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-box h3 {
+        color: var(--dark);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .result-box h3 i {
+        margin-right: 10px;
+        color: var(--primary);
+    }
+
+    .result-content {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .result-item {
+        background: var(--light);
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .result-item h4 {
+        font-size: 0.9rem;
+        color: var(--gray);
+        margin-bottom: 5px;
+    }
+
+    .result-item p {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: var(--dark);
+    }
+
+    .case-1 { color: var(--success); }
+    .case-2 { color: var(--warning); }
+    .case-3 { color: var(--danger); }
+    .chart-container {
+        flex: 1;
+        margin-top: 30px;
+        background: white;
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: var(--shadow);
+        animation: fadeInUp 0.8s ease-out;
+        animation-delay: 0.2s;
+        animation-fill-mode: both;
+        height: 400px;
+        position: relative;
+    }
+    
+    .chart-container canvas {
+        max-height: 320px;
+    }
+
+
+    .chart-container h3 {
+        color: var(--dark);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .chart-container h3 i {
+        margin-right: 10px;
+        color: var(--primary);
+    }
+
+    .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        font-size: 0.9rem;
+    }
+
+    .legend-color {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+        margin-right: 8px;
+    }
+
+    .explanation {
+        background: white;
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-top: 30px;
+        box-shadow: var(--shadow);
+        animation: fadeInUp 0.8s ease-out;
+        animation-delay: 0.4s;
+        animation-fill-mode: both;
+    }
+
+    .explanation h3 {
+        color: var(--dark);
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+    }
+
+    .explanation h3 i {
+        margin-right: 10px;
+        color: var(--primary);
+    }
+
+    .explanation p {
+        color: var(--gray);
+        line-height: 1.6;
+        margin-bottom: 10px;
+    }
+
+    .formula {
+        background: var(--light);
+        padding: 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 1.1rem;
+        margin-top: 10px;
+        color: var(--dark);
+        border-left: 4px solid var(--primary);
+    }
+
+    .footer {
+        text-align: center;
+        padding: 20px;
+        color: var(--gray);
+        font-size: 0.9rem;
+        border-top: 1px solid var(--gray-light);
+    }
+
+    @media (max-width: 900px) {
+        .content {
+            flex-direction: column;
+        }
+        
+        .input-section {
+            border-right: none;
+            border-bottom: 1px solid var(--gray-light);
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-project-diagram"></i> Master Theorem Visualizer</h1>
+        <p>Interactive visualization of recurrence relations using the Master Theorem. Enter parameters to visualize work per recursion level and determine time complexity.</p>
+    </div>
+    
+    <div class="content">
+        <div class="input-section">
+            <div class="input-group">
+                <label for="a"><i class="fas fa-sitemap"></i> a (number of subproblems)</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-hashtag"></i>
+                    <input type="number" id="a" value="2" min="1" step="1">
+                </div>
+                <small style="color: var(--gray); display: block; margin-top: 5px;">Number of recursive calls at each level</small>
+            </div>
+            
+            <div class="input-group">
+                <label for="b"><i class="fas fa-divide"></i> b (division factor)</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-divide"></i>
+                    <input type="number" id="b" value="2" min="2" step="1">
+                </div>
+                <small style="color: var(--gray); display: block; margin-top: 5px;">Factor by which problem size is reduced</small>
+            </div>
+            
+            <div class="input-group">
+                <label for="fpower"><i class="fas fa-chart-line"></i> f(n) = n<sup>k</sup> (work per level)</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-exponent"></i>
+                    <input type="number" id="fpower" value="1" min="0" step="0.1" placeholder="Enter k where f(n) = n^k">
+                </div>
+                <small style="color: var(--gray); display: block; margin-top: 5px;">Exponent k in f(n) = n<sup>k</sup></small>
+            </div>
+            
+            <div class="input-group">
+                <label for="n"><i class="fas fa-expand-arrows-alt"></i> Input size n</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-calculator"></i>
+                    <input type="number" id="n" value="1024" min="8" step="1">
+                </div>
+                <small style="color: var(--gray); display: block; margin-top: 5px;">Initial problem size for visualization</small>
+            </div>
+            
+            <div class="button-container">
+                <button class="btn" onclick="solve()">
+                    <i class="fas fa-play-circle"></i> Calculate & Visualize
+                </button>
+            </div>
+            
+            <div class="result-box" id="output" style="display: none;">
+                <h3><i class="fas fa-chart-bar"></i> Analysis Results</h3>
+                <div class="result-content">
+                    <div class="result-item">
+                        <h4>log_b(a)</h4>
+                        <p id="logResult">-</p>
+                    </div>
+                    <div class="result-item">
+                        <h4>Master Theorem Case</h4>
+                        <p id="caseResult">-</p>
+                    </div>
+                    <div class="result-item">
+                        <h4>Time Complexity</h4>
+                        <p id="complexityResult">-</p>
+                    </div>
+                    <div class="result-item">
+                        <h4>Dominant Factor</h4>
+                        <p id="dominantResult">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="visualization-section">
+            <div class="chart-container">
+                <h3><i class="fas fa-chart-area"></i> Work per Recursion Level</h3>
+                <canvas id="graph"></canvas>
+                <div class="legend" id="legend"></div>
+            </div>
+            
+            <div class="explanation">
+                <h3><i class="fas fa-lightbulb"></i> Master Theorem Explained</h3>
+                <p>For recurrence T(n) = aT(n/b) + f(n) where f(n) = Θ(n<sup>k</sup>):</p>
+                <div class="formula">
+                    Case 1: If k < log_b(a) → T(n) = Θ(n<sup>log_b(a)</sup>)<br>
+                    Case 2: If k = log_b(a) → T(n) = Θ(n<sup>k</sup> log n)<br>
+                    Case 3: If k > log_b(a) → T(n) = Θ(n<sup>k</sup>)
+                </div>
+                <p>The graph shows work at each recursion level. The curve shape indicates which case applies.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        Master Theorem Visualizer • Created for Algorithm Analysis • Interactive Tool
+    </div>
+</div>
+
+<script>
+    let chart;
+    let animationInProgress = false;
+
+    function solve() {
+        // Prevent multiple simultaneous animations
+        if (animationInProgress) return;
+        animationInProgress = true;
+        
+        let a = Number(document.getElementById("a").value);
+        let b = Number(document.getElementById("b").value);
+        let f = Number(document.getElementById("fpower").value);
+        let n = Number(document.getElementById("n").value);
+        
+        if (a <= 0 || b <= 1 || f < 0 || n < 1) {
+            showError("Please enter valid values: a>0, b>1, f≥0, n≥1");
+            animationInProgress = false;
+            return;
+        }
+        
+        // Show result box with animation
+        const resultBox = document.getElementById("output");
+        resultBox.style.display = "block";
+        resultBox.style.animation = "none";
+        setTimeout(() => {
+            resultBox.style.animation = "fadeInUp 0.6s ease-out";
+        }, 10);
+        
+        // Calculate master theorem parameters
+        let k = Math.log(a) / Math.log(b);
+        let levels = Math.floor(Math.log(n) / Math.log(b)) + 1;
+        
+        // Prepare data for chart with simulated animation
+        let x = [];
+        let y = [];
+        let cumulativeY = [];
+        
+        for (let i = 0; i < levels; i++) {
+            let nodes = Math.pow(a, i);
+            let size = n / Math.pow(b, i);
+            let work = nodes * Math.pow(size, f);
+            x.push(`Level ${i}`);
+            y.push(work);
+            cumulativeY.push(i === 0 ? work : cumulativeY[i-1] + work);
+        }
+        
+        // Determine Master Theorem case
+        let caseName, complexity, dominant, caseClass;
+        
+        if (f < k - 0.001) { // Add small epsilon for floating point comparison
+            caseName = "Case 1";
+            complexity = `Θ(n^${k.toFixed(2)})`;
+            dominant = "Recursion dominates";
+            caseClass = "case-1";
+        } else if (Math.abs(f - k) < 0.001) {
+            caseName = "Case 2";
+            complexity = `Θ(n^${f} log n)`;
+            dominant = "Balanced work";
+            caseClass = "case-2";
+        } else {
+            caseName = "Case 3";
+            complexity = `Θ(n^${f})`;
+            dominant = "Leaf work dominates";
+            caseClass = "case-3";
+        }
+        
+        // Update results with animation
+        updateResultWithAnimation("logResult", `${k.toFixed(2)}`, 0);
+        updateResultWithAnimation("caseResult", `<span class="${caseClass}">${caseName}</span>`, 200);
+        updateResultWithAnimation("complexityResult", complexity, 400);
+        updateResultWithAnimation("dominantResult", dominant, 600);
+        
+        // Create or update chart with animation
+        if (chart) {
+            // Animate chart update
+            chart.data.labels = x;
+            chart.data.datasets[0].data = y;
+            chart.data.datasets[1].data = cumulativeY;
+            chart.update();
+        } else {
+            createChart(x, y, cumulativeY);
+        }
+        
+        // Update legend
+        updateLegend(caseName, caseClass);
+        
+        // Reset animation flag after all animations complete
+        setTimeout(() => {
+            animationInProgress = false;
+        }, 1000);
+    }
+
+    function updateResultWithAnimation(elementId, value, delay) {
+        setTimeout(() => {
+            const element = document.getElementById(elementId);
+            element.style.opacity = 0;
+            element.style.transform = "translateY(10px)";
+            
+            setTimeout(() => {
+                element.innerHTML = value;
+                element.style.transition = "all 0.5s ease";
+                element.style.opacity = 1;
+                element.style.transform = "translateY(0)";
+            }, 50);
+        }, delay);
+    }
+
+    function createChart(labels, workData, cumulativeData) {
+        const ctx = document.getElementById('graph').getContext('2d');
+        
+        // Generate gradient for work per level
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(67, 97, 238, 0.8)');
+        gradient.addColorStop(1, 'rgba(67, 97, 238, 0.1)');
+        
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Work per Level',
+                        data: workData,
+                        borderColor: '#4361ee',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#4361ee',
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        animation: {
+                            duration: 1500,
+                            easing: 'easeOutQuart'
+                        }
+                    },
+                    {
+                        label: 'Cumulative Work',
+                        data: cumulativeData,
+                        borderColor: '#f72585',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.3,
+                        borderDash: [5, 5],
+                        pointBackgroundColor: '#f72585',
+                        pointRadius: 4,
+                        pointHoverRadius: 7
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    // Format large numbers with scientific notation if needed
+                                    if (context.parsed.y > 1000000) {
+                                        label += context.parsed.y.toExponential(2);
+                                    } else {
+                                        label += Math.round(context.parsed.y).toLocaleString();
+                                    }
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Recursion Level',
+                            color: '#666',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    },
+                    y: {
+                        type: 'logarithmic',
+                        title: {
+                            display: true,
+                            text: 'Work (log scale)',
+                            color: '#666',
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0,0,0,0.05)'
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateLegend(caseName, caseClass) {
+        const legend = document.getElementById('legend');
+        const colors = {
+            'Case 1': '#4cc9f0',
+            'Case 2': '#f8961e',
+            'Case 3': '#f72585'
+        };
+        
+        legend.innerHTML = `
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4361ee"></div>
+                <span>Work per Recursion Level</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #f72585; border-dash: 2px"></div>
+                <span>Cumulative Work</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: ${colors[caseName]}"></div>
+                <span>Master Theorem: <strong class="${caseClass}">${caseName}</strong></span>
+            </div>
+        `;
+    }
+
+    function showError(message) {
+        const resultBox = document.getElementById("output");
+        resultBox.style.display = "block";
+        resultBox.innerHTML = `
+            <h3><i class="fas fa-exclamation-triangle"></i> Error</h3>
+            <div class="result-content">
+                <div class="result-item" style="grid-column: 1 / -1; background: #ffebee; color: #c62828;">
+                    <h4>Invalid Input</h4>
+                    <p>${message}</p>
+                </div>
+            </div>
+        `;
+        resultBox.style.animation = "none";
+        setTimeout(() => {
+            resultBox.style.animation = "fadeInUp 0.6s ease-out";
+        }, 10);
+    }
+
+    // Initialize with default values
+    window.onload = function() {
+        // Trigger the solve function after a brief delay for initial animation
+        setTimeout(solve, 500);
+    };
+</script>
+
+</body>
+</html>
